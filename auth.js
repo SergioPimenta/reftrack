@@ -20,6 +20,8 @@ authRoutes.post('/login', async (req, res) => {
         const result = await db.query('SELECT * FROM usuarios WHERE usuario = $1', [username]);
 
         if (result.rows.length === 0) {
+            const allUsers = await db.query('SELECT id, usuario FROM usuarios');
+            console.log('Login falhou para', username, '. Usuarios no DB:', allUsers.rows);
             return res.status(401).json({ error: 'Usuário não encontrado no banco.' });
         }
 
