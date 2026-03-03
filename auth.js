@@ -20,7 +20,7 @@ authRoutes.post('/login', async (req, res) => {
         const result = await db.query('SELECT * FROM usuarios WHERE usuario = $1', [username]);
 
         if (result.rows.length === 0) {
-            return res.status(401).json({ error: 'Credenciais inválidas.' });
+            return res.status(401).json({ error: 'Usuário não encontrado no banco.' });
         }
 
         const user = result.rows[0];
@@ -38,7 +38,7 @@ authRoutes.post('/login', async (req, res) => {
 
             return res.json({ message: 'Login bem-sucedido', nome: user.nome });
         } else {
-            return res.status(401).json({ error: 'Credenciais inválidas.' });
+            return res.status(401).json({ error: 'Senha incorreta para o usuário admin.' });
         }
     } catch (error) {
         console.error('Erro no login', error);
