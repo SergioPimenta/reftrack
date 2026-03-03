@@ -10,16 +10,13 @@ router.post('/', async (req, res) => {
 
     try {
         const payload = req.body;
+        console.log('--- WEBHOOK RECEBIDO ---');
+        console.log(JSON.stringify(payload, null, 2));
 
-        // Guardar para front
-        ultimosLogs.unshift({
-            data: new Date().toISOString(),
-            evento: payload.event || 'N/A',
-            transaction: payload.data?.purchase?.transaction || 'N/A'
-        });
-        if (ultimosLogs.length > 10) ultimosLogs.pop();
-
-        if (!payload.data || !payload.data.purchase) return;
+        if (!payload.data || !payload.data.purchase) {
+            console.log('Payload ignorado - sem purchase data');
+            return;
+        }
 
         const purchase = payload.data.purchase;
         const buyer = payload.data.buyer || {};
