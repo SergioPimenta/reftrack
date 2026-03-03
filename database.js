@@ -71,7 +71,7 @@ function initDb() {
         if (countIndicadores === 0) {
           console.log('Populando banco de dados PostgreSQL com dados iniciais (seed)...');
 
-          const insertIndQuery = \`INSERT INTO indicadores (nome, email, comissao_percentual) VALUES ($1, $2, $3) RETURNING id\`;
+          const insertIndQuery = `INSERT INTO indicadores (nome, email, comissao_percentual) VALUES ($1, $2, $3) RETURNING id`;
           const ind1 = await client.query(insertIndQuery, ['Alice Silva', 'alice@example.com', 15]);
           const ind2 = await client.query(insertIndQuery, ['Bruno Costa', 'bruno@example.com', 20]);
           const ind3 = await client.query(insertIndQuery, ['Carla Diaz', 'carla@example.com', 10]);
@@ -80,10 +80,10 @@ function initDb() {
           const id2 = ind2.rows[0].id;
           const id3 = ind3.rows[0].id;
 
-          const insertVendaQuery = \`
+          const insertVendaQuery = `
             INSERT INTO vendas (indicador_id, transaction_id, produto_nome, comprador_email, comprador_nome, valor, comissao_valor, status, src_recebido, data_venda) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP - ($10 || ' days')::INTERVAL)
-          \`;
+          `;
 
           const vendasData = [
             { indId: id1, tId: 'HP123451', p: 'Curso Beta', ce: 'cli1@mail.com', cn: 'Cliente Um', v: 100, status: 'APPROVED', src: 'alice@example.com', dias: '1' },
