@@ -58,7 +58,8 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 
   if (res.status === 401 || res.status === 403) {
     showLogin();
-    throw new Error('Não autorizado');
+    // Repassamos a mensagem específica do backend, se houver
+    throw new Error(data.error || 'Não autorizado');
   }
 
   if (!res.ok) {
