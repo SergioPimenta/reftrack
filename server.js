@@ -3,15 +3,18 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config();
 
+const jwt = require('jsonwebtoken'); // Need jwt from the library early or directly in auth
+
 const { authRoutes, authenticateToken } = require('./auth');
 const indicadoresRoutes = require('./routes/indicadores');
 const vendasRoutes = require('./routes/vendas');
 const webhookRoutes = require('./routes/webhook');
+const usuariosRoutes = require('./routes/usuarios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
 
@@ -21,6 +24,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API Routes
 app.use('/api', authRoutes); // /api/login, /api/logout
 app.use('/api/indicadores', authenticateToken, indicadoresRoutes);
+app.use('/api/usuarios', authenticateToken, usuariosRoutes);
 app.use('/api/vendas', authenticateToken, vendasRoutes.vendasRoutes);
 app.use('/api/stats', authenticateToken, vendasRoutes.statsRoutes);
 app.use('/api/webhook/hotmart', webhookRoutes);

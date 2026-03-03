@@ -1,52 +1,67 @@
 const jwt = require('jsonwebtoken');
-
+const bcrypt = require('bcryptjs');
+const express = require('express');
+const db = require('./database');
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
-const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
 
+const authRoutes = express.Router();
+
+authRoutes.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        const result = await db.query('SELECT * FROM usuarios WHERE usuario = $1', [username]);
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'Credenciais inválidas.' });
+        }
+
+        const user = result.rows[0];
+        const isMatch = await bcrypt.compare(password, user.senha);
+
+        if (isMatch) {
+            const token = jwt.sign({ id: user.id, username: user.usuario, role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+
+            res.cookie('auth_token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 12 * 60 * 60 * 1000 // 12 hours
+            });
+
+            return res.json({ message: 'Login bem-sucedido', nome: user.nome });
+        } else {
+            return res.status(401).json({ error: 'Credenciais inválidas.' });
+        }
+    } catch (error) {
+        console.error('Erro no login', error);
+        res.status(500).json({ error: 'Erro interno no servidor' });
+    }
+});
+
+authRoutes.post('/logout', (req, res) => {
+    res.clearCookie('auth_token');
+    return res.json({ message: 'Logout efetuado com sucesso.' });
+});
+
+// Middleware
 function authenticateToken(req, res, next) {
-    const token = req.cookies.token;
+    const token = req.cookies.auth_token;
 
-    if (!token) return res.status(401).json({ error: 'Acesso negado. Nenhum token fornecido.' });
+    if (!token) {
+        return res.status(401).json({ error: 'Acesso negado. Token não fornecido.' });
+    }
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: 'Token inválido ou expirado.' });
-
         req.user = user;
         next();
     });
 }
 
-const authRoutes = require('express').Router();
-
-authRoutes.post('/login', (req, res) => {
-    const { usuario, senha } = req.body;
-
-    if (usuario === ADMIN_USER && senha === ADMIN_PASS) {
-        const token = jwt.sign({ username: usuario, role: 'admin' }, JWT_SECRET, { expiresIn: '8h' });
-
-        // Configura o cookie httpOnly
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 8 * 60 * 60 * 1000 // 8 horas
-        });
-
-        res.json({ message: 'Login bem-sucedido.' });
-    } else {
-        res.status(401).json({ error: 'Credenciais inválidas.' });
-    }
-});
-
-authRoutes.post('/logout', (req, res) => {
-    res.clearCookie('token');
-    res.json({ message: 'Logout bem-sucedido.' });
-});
-
 module.exports = {
-    authenticateToken,
-    authRoutes
+    authRoutes,
+    authenticateToken
 };

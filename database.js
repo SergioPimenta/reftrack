@@ -12,6 +12,17 @@ async function initDb() {
   try {
     const client = await pool.connect();
 
+    // Cria tabela de usuarios
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS usuarios (
+        id SERIAL PRIMARY KEY,
+        nome TEXT NOT NULL,
+        usuario TEXT NOT NULL UNIQUE,
+        senha TEXT NOT NULL,
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Cria tabela de indicadores
     await client.query(`
       CREATE TABLE IF NOT EXISTS indicadores (
@@ -40,6 +51,16 @@ async function initDb() {
         data_venda TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Verifica se há dados na tabela de usuarios para o seed de admin base
+    const resUsuarios = await client.query('SELECT COUNT(*) as count FROM usuarios');
+    const countUsuarios = parseInt(resUsuarios.rows[0].count, 10);
+    if (countUsuarios === 0) {
+      console.log('Criando usuário administrador padrão (admin/admin123)...');
+      const bcrypt = require('bcryptjs');
+      const hash = await bcrypt.hash('admin123', 10);
+      await client.query('INSERT INTO usuarios (nome, usuario, senha) VALUES ($1, $2, $3)', ['Admin Principal', 'admin', hash]);
+    }
 
     // Verifica se há dados na tabela de indicadores para fazer o seed
     const res = await client.query('SELECT COUNT(*) as count FROM indicadores');

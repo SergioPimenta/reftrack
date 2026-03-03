@@ -1,22 +1,26 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RefTrack - Sistema de Indicações</title>
-  
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+
   <link rel="stylesheet" href="/style.css">
 </head>
+
 <body>
 
   <!-- App Container -->
   <div id="app-container" class="hidden">
-    
+
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
@@ -24,10 +28,11 @@
         <div class="logo-subtitle">SISTEMA DE INDICAÇÕES</div>
       </div>
       <div class="sidebar-sep"></div>
-      
+
       <nav class="sidebar-nav">
         <a href="#dashboard" class="nav-item" data-view="dashboard">Dashboard</a>
         <a href="#indicadores" class="nav-item" data-view="indicadores">Indicadores</a>
+        <a href="#usuarios" class="nav-item" data-view="usuarios">Usuários</a>
         <a href="#vendas" class="nav-item" data-view="vendas">Vendas</a>
         <a href="#webhook" class="nav-item" data-view="webhook">Webhook</a>
       </nav>
@@ -43,11 +48,11 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-      
+
       <!-- Topbar -->
       <header class="topbar">
         <h1 id="page-title" class="page-title">Dashboard</h1>
-        
+
         <div class="topbar-actions">
           <div class="webhook-badge" id="webhook-badge-top" style="display: none;">
             <div class="dot-pulse"></div>
@@ -56,12 +61,12 @@
           <div id="topbar-action-container"></div>
         </div>
       </header>
-      
+
       <!-- Dynamic View Container -->
       <div id="view-container" class="view-container">
         <!-- Views injected by app.js here -->
       </div>
-      
+
     </main>
 
   </div>
@@ -81,7 +86,9 @@
         </div>
         <button type="submit" class="btn-primary" style="width: 100%; margin-top: 25px;">ENTRAR</button>
       </form>
-      <div id="login-error" style="color: var(--danger); font-family: DM Mono; font-size: 11px; margin-top: 10px; text-align: center;"></div>
+      <div id="login-error"
+        style="color: var(--danger); font-family: DM Mono; font-size: 11px; margin-top: 10px; text-align: center;">
+      </div>
     </div>
   </div>
 
@@ -98,4 +105,5 @@
   <!-- Scripts -->
   <script src="/app.js"></script>
 </body>
+
 </html>
