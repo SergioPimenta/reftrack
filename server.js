@@ -30,6 +30,11 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`RefTrack Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`RefTrack Server running on port ${PORT}`);
+    });
+}
+
+// Export para Vercel Serverless
+module.exports = app;
