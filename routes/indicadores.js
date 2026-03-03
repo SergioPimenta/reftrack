@@ -2,18 +2,18 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 
-// GET /api/indicadores - lista todos os ativos (e os inativos se precisar, mas vamos listar todos com flag)
-router.get('/', (req, res) => {
+// GET /api/indicadores - lista todos
+router.get('/', async (req, res) => {
     try {
-        const indicadores = db.prepare('SELECT * FROM indicadores ORDER BY nome ASC').all();
-        res.json(indicadores);
+        const result = await db.query('SELECT * FROM indicadores ORDER BY nome ASC');
+        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 // POST /api/indicadores - cadastra novo
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { nome, email, comissao_percentual } = req.body;
 
     if (!nome || !email) {
@@ -23,13 +23,14 @@ router.post('/', (req, res) => {
     try {
         const comissao = comissao_percentual ? parseFloat(comissao_percentual) : 10;
 
-        const stmt = db.prepare('INSERT INTO indicadores (nome, email, comissao_percentual) VALUES (?, ?, ?)');
-        const info = stmt.run(nome, email, comissao);
+        const result = await db.query(
+            'INSERT INTO indicadores (nome, email, comissao_percentual) VALUES ($1, $2, $3) RETURNING *',
+            [nome, email, comissao]
+        );
 
-        const novoIndicador = db.prepare('SELECT * FROM indicadores WHERE id = ?').get(info.lastInsertRowid);
-        res.status(201).json(novoIndicador);
+        res.status(201).json(result.rows[0]);
     } catch (err) {
-        if (err.message.includes('UNIQUE constraint failed: indicadores.email')) {
+        if (err.message.includes('unique constraint') || err.message.includes('UNIQUE constraint')) {
             return res.status(400).json({ error: 'Email já cadastrado.' });
         }
         res.status(500).json({ error: err.message });
@@ -37,35 +38,32 @@ router.post('/', (req, res) => {
 });
 
 // PUT /api/indicadores/:id - edita
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     const id = req.params.id;
     const { nome, email, comissao_percentual, ativo } = req.body;
 
     try {
-        const stmt = db.prepare(`
+        const result = await db.query(`
       UPDATE indicadores 
-      SET nome = COALESCE(?, nome),
-          email = COALESCE(?, email),
-          comissao_percentual = COALESCE(?, comissao_percentual),
-          ativo = COALESCE(?, ativo)
-      WHERE id = ?
-    `);
-
-        // Convert undefined to null for COALESCE to work properly
-        stmt.run(
+      SET nome = COALESCE($1, nome),
+          email = COALESCE($2, email),
+          comissao_percentual = COALESCE($3, comissao_percentual),
+          ativo = COALESCE($4, ativo)
+      WHERE id = $5
+      RETURNING *
+    `, [
             nome !== undefined ? nome : null,
             email !== undefined ? email : null,
             comissao_percentual !== undefined ? parseFloat(comissao_percentual) : null,
             ativo !== undefined ? (ativo ? 1 : 0) : null,
             id
-        );
+        ]);
 
-        const atualizado = db.prepare('SELECT * FROM indicadores WHERE id = ?').get(id);
-        if (!atualizado) return res.status(404).json({ error: 'Indicador não encontrado.' });
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Indicador não encontrado.' });
 
-        res.json(atualizado);
+        res.json(result.rows[0]);
     } catch (err) {
-        if (err.message.includes('UNIQUE constraint failed')) {
+        if (err.message.includes('unique constraint')) {
             return res.status(400).json({ error: 'Email já cadastrado.' });
         }
         res.status(500).json({ error: err.message });
@@ -73,14 +71,13 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /api/indicadores/:id - desativa (soft delete)
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     const id = req.params.id;
 
     try {
-        const stmt = db.prepare('UPDATE indicadores SET ativo = 0 WHERE id = ?');
-        const info = stmt.run(id);
+        const result = await db.query('UPDATE indicadores SET ativo = 0 WHERE id = $1', [id]);
 
-        if (info.changes === 0) return res.status(404).json({ error: 'Indicador não encontrado.' });
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Indicador não encontrado.' });
 
         res.json({ message: 'Indicador desativado com sucesso.' });
     } catch (err) {

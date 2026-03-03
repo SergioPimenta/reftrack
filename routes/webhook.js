@@ -4,14 +4,14 @@ const router = express.Router();
 
 let ultimosLogs = [];
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     // Retorna 200 imediatamente para o Hotmart não ficar aguardando
     res.status(200).send('OK');
 
     try {
         const payload = req.body;
 
-        // Apenas guardando o log para o front (últimos 10)
+        // Guardar para front
         ultimosLogs.unshift({
             data: new Date().toISOString(),
             evento: payload.event || 'N/A',
@@ -19,7 +19,6 @@ router.post('/', (req, res) => {
         });
         if (ultimosLogs.length > 10) ultimosLogs.pop();
 
-        // Processamento do payload padrão Hotmart (simplificado)
         if (!payload.data || !payload.data.purchase) return;
 
         const purchase = payload.data.purchase;
@@ -38,41 +37,35 @@ router.post('/', (req, res) => {
         let indicadorId = null;
         let comissao = 0;
 
-        // Se veio um src (e-mail do indicador), tenta encontrar no banco
         if (src) {
-            const indicador = db.prepare('SELECT id, comissao_percentual FROM indicadores WHERE email = ?').get(src);
-            if (indicador) {
+            const resInd = await db.query('SELECT id, comissao_percentual FROM indicadores WHERE email = $1', [src]);
+            if (resInd.rows.length > 0) {
+                const indicador = resInd.rows[0];
                 indicadorId = indicador.id;
 
-                // Calcula comissão apenas se a venda foi aprovada
                 if (status === 'APPROVED') {
                     comissao = (price * indicador.comissao_percentual) / 100;
                 }
             }
         }
 
-        // Insere ou ignora a venda baseada no transaction_id
-        // Se o status mudar (ex: PENDING -> APPROVED), na vida real faríamos um UPSERT
-        // Vamos fazer um UPSERT (INSERT OR REPLACE ou ON CONFLICT DO UPDATE)
+        // Postgres UPSERT: INSERT ... ON CONFLICT DO UPDATE
         const upsertQuery = `
       INSERT INTO vendas (indicador_id, transaction_id, produto_nome, comprador_email, comprador_nome, valor, comissao_valor, status, src_recebido)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT(transaction_id) DO UPDATE SET
-        status = excluded.status,
-        comissao_valor = excluded.comissao_valor,
-        indicador_id = excluded.indicador_id
+        status = EXCLUDED.status,
+        comissao_valor = EXCLUDED.comissao_valor,
+        indicador_id = EXCLUDED.indicador_id
     `;
 
-        db.prepare(upsertQuery).run(
-            indicadorId, transactionId, produtoNome, compradorEmail, compradorNome, price, comissao, status, src
-        );
+        await db.query(upsertQuery, [indicadorId, transactionId, produtoNome, compradorEmail, compradorNome, price, comissao, status, src]);
 
     } catch (error) {
         console.error('Erro processando webhook', error);
     }
 });
 
-// Endpoint só pra nossa tela consultar os últimos logs em memória
 router.get('/logs', (req, res) => {
     res.json(ultimosLogs);
 });
