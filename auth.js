@@ -12,6 +12,11 @@ authRoutes.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     try {
+        // Tenta garantir que o DB existe antes de logar. (Útil no 1º cold-boot do Vercel Serverless)
+        if (process.env.DATABASE_URL) {
+            await db.initDb();
+        }
+
         const result = await db.query('SELECT * FROM usuarios WHERE usuario = $1', [username]);
 
         if (result.rows.length === 0) {
