@@ -37,7 +37,7 @@ authRoutes.post('/login', async (req, res) => {
         }
     } catch (error) {
         console.error('Erro no login', error);
-        res.status(500).json({ error: 'Erro interno no servidor' });
+        res.status(500).json({ error: 'Erro de DB: ' + error.message });
     }
 });
 
