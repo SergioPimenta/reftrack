@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 const authRoutes = express.Router();
 
 authRoutes.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { usuario, senha } = req.body;
 
     try {
         // Tenta garantir que o DB existe antes de logar. (Útil no 1º cold-boot do Vercel Serverless)
@@ -17,16 +17,16 @@ authRoutes.post('/login', async (req, res) => {
             await db.initDb();
         }
 
-        const result = await db.query('SELECT * FROM usuarios WHERE usuario = $1', [username]);
+        const result = await db.query('SELECT * FROM usuarios WHERE usuario = $1', [usuario]);
 
         if (result.rows.length === 0) {
             const allUsers = await db.query('SELECT id, usuario FROM usuarios');
-            console.log('Login falhou para', username, '. Usuarios no DB:', allUsers.rows);
+            console.log('Login falhou para', usuario, '. Usuarios no DB:', allUsers.rows);
             return res.status(401).json({ error: 'Usuário não encontrado no banco.' });
         }
 
         const user = result.rows[0];
-        const isMatch = await bcrypt.compare(password, user.senha);
+        const isMatch = await bcrypt.compare(senha, user.senha);
 
         if (isMatch) {
             const token = jwt.sign({ id: user.id, username: user.usuario, role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
