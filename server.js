@@ -29,6 +29,13 @@ app.use('/api/vendas', authenticateToken, vendasRoutes.vendasRoutes);
 app.use('/api/stats', authenticateToken, vendasRoutes.statsRoutes);
 app.use('/api/webhook/hotmart', webhookRoutes);
 
+// Config endpoint para frontend puxar variáveis não sensíveis (como a URL do produto)
+app.get('/api/config', authenticateToken, (req, res) => {
+    res.json({
+        hotmartProductUrl: process.env.HOTMART_PRODUCT_URL || 'https://sua-pagina-de-vendas.com'
+    });
+});
+
 // Fallback to index.html for SPA router
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));

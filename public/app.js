@@ -113,6 +113,7 @@ const state = {
   usuarios: [],
   vendas: [],
   stats: {},
+  config: { hotmartProductUrl: '' },
   currentView: 'dashboard'
 };
 
@@ -134,14 +135,16 @@ async function initApp() {
 
 async function loadData() {
   try {
-    const [ind, stats, usrs] = await Promise.all([
+    const [ind, stats, usrs, config] = await Promise.all([
       apiCall('/api/indicadores'),
       apiCall('/api/stats'),
-      apiCall('/api/usuarios')
+      apiCall('/api/usuarios'),
+      apiCall('/api/config')
     ]);
     state.indicadores = ind;
     state.stats = stats;
     state.usuarios = usrs;
+    state.config = config;
   } catch (err) {
     console.error(err);
   }
@@ -544,8 +547,8 @@ window.openModalInd = function (id = null) {
       </div>
       
       <div style="margin-top: 20px;">
-        <label style="font-family: DM Mono; font-size: 10px; color: var(--muted); text-transform: uppercase;">Preview do Link</label>
-        <div class="link-preview" id="link-prev">https://go.hotmart.com/PRODUTO?src=${ind ? ind.email : ''}</div>
+        <label style="font-family: DM Mono; font-size: 10px; color: var(--muted); text-transform: uppercase;">Preview do Link de Venda</label>
+        <div class="link-preview" id="link-prev"></div>
       </div>
       
       <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
@@ -578,10 +581,19 @@ window.openModalInd = function (id = null) {
     }
   });
 }
+  });
+
+// Mostra o preview inicial
+updatePreview();
+}
 
 window.updatePreview = function () {
-  const em = $('#ind-email').value;
-  $('#link-prev').innerText = `https://go.hotmart.com/PRODUTO?src=${em}`;
+  const em = $('#ind-email').value || 'email@indicador.com';
+  const baseUrl = state.config?.hotmartProductUrl || 'https://pay.hotmart.com/PRODUTO';
+
+  // Se a URL do produto já tiver ?, usamos &, senão usamos ?
+  const separator = baseUrl.includes('?') ? '&' : '?';
+  $('#link-prev').innerText = `${baseUrl}${separator}src=${em}`;
 }
 
 window.closeModal = function () {
