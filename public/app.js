@@ -548,7 +548,10 @@ window.openModalInd = function (id = null) {
       
       <div style="margin-top: 20px;">
         <label style="font-family: DM Mono; font-size: 10px; color: var(--muted); text-transform: uppercase;">Preview do Link de Venda</label>
-        <div class="link-preview" id="link-prev"></div>
+        <div class="flex-row" style="gap: 8px;">
+          <div class="link-preview" id="link-prev" style="flex: 1;"></div>
+          <button type="button" class="btn-ghost" style="padding: 0 16px; border-color: var(--primary); color: var(--primary);" onclick="window.copyPreviewLink()">Copiar</button>
+        </div>
       </div>
       
       <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
@@ -592,6 +595,16 @@ window.updatePreview = function () {
   // Se a URL do produto já tiver ?, usamos &, senão usamos ?
   const separator = baseUrl.includes('?') ? '&' : '?';
   $('#link-prev').innerText = `${baseUrl}${separator}src=${em}`;
+}
+
+window.copyPreviewLink = function () {
+  const txt = $('#link-prev').innerText;
+  if (!txt || txt.includes('email@indicador.com')) {
+    showToast('Preencha o e-mail antes de copiar!', true);
+    return;
+  }
+  navigator.clipboard.writeText(txt);
+  showToast('Link do Indicador copiado!');
 }
 
 window.closeModal = function () {
