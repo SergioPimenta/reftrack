@@ -25,7 +25,10 @@ router.post('/', async (req, res) => {
         const transactionId = purchase.transaction;
         const status = purchase.status;
         const price = purchase.price?.value || 0;
-        const src = purchase.tracking?.source || '';
+
+        // A API v2 da Hotmart pode trazer o SRC em lugares diferentes (origin.src ou tracking.source)
+        let rawSrc = purchase.origin?.src || purchase.tracking?.source || '';
+        const src = typeof rawSrc === 'string' ? rawSrc.trim() : '';
 
         const compradorEmail = buyer.email || '';
         const compradorNome = buyer.name || '';
