@@ -580,11 +580,9 @@ window.openModalInd = function (id = null) {
       showToast(err.message, true);
     }
   });
-}
-  });
 
-// Mostra o preview inicial
-updatePreview();
+  // Mostra o preview inicial
+  updatePreview();
 }
 
 window.updatePreview = function () {
